@@ -222,7 +222,7 @@ macro_rules! quantity {
                 $quantity {
                     dimension: $crate::lib::marker::PhantomData,
                     units: $crate::lib::marker::PhantomData,
-                    value: __system::to_base::<Dimension, U, V, N>(&v),
+                    value: __system::to_base::<Dimension, U, V, N>(&<N>::into_linear(v)),
                 }
             }
 
@@ -235,7 +235,7 @@ macro_rules! quantity {
             where
                 N: Unit + $crate::Conversion<V, T = V::T>,
             {
-                __system::from_base::<Dimension, U, V, N>(&self.value)
+                <N>::from_linear(__system::from_base::<Dimension, U, V, N>(&self.value))
             }
 
             /// Returns the largest integer less than or equal to a number in the given
@@ -444,4 +444,27 @@ macro_rules! quantity {
     };
     (@kind $kind:ty) => { $kind };
     (@kind) => { dyn $crate::Kind };
+    (@base $factor:expr, $base:expr, $scale:expr) => { $base };
+    (@base $factor:expr, $const:expr) => { 1.0 };
+    (@base $factor:expr) => { 1.0 };
+    (@scale $factor:expr, $base:expr, $scale:expr) => { $scale };
+    (@scale $factor:expr, $const:expr) => { 1.0 };
+    (@scale $factor:expr) => { 1.0 };
+    (@logarithmic $factor:expr, $base:expr, $scale:expr) => {
+        #[inline(always)]
+        fn into_linear(x: V) -> V {
+            use $crate::ConversionFactor;
+            <Self as $crate::Conversion<V>>::base().pow((
+                (<<Self as $crate::Conversion<V>>::T as $crate::num::One>::one() / <Self as $crate::Conversion<V>>::scale()) * x.into_conversion()
+            ).value())
+        }
+
+        #[inline(always)]
+        fn from_linear(x: V) -> V {
+            use $crate::ConversionFactor;
+            (<Self as $crate::Conversion<V>>::scale() * x.into_conversion().log(<Self as $crate::Conversion<V>>::base().value()).into_conversion()).value()
+        }
+    };
+    (@logarithmic $factor:expr, $const:expr) => { };
+    (@logarithmic $factor:expr) => { };
 }

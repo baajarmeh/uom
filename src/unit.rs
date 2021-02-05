@@ -162,13 +162,13 @@ macro_rules! unit {
                 }
 
                 #[inline(always)]
-                #[allow(unused_variables)]
+                //#[allow(unused_variables)]
                 fn base() -> Self::T {
                     unit!(@base $($conversion),+)
                 }
 
                 #[inline(always)]
-                #[allow(unused_variables)]
+                //#[allow(unused_variables)]
                 fn scale() -> Self::T {
                     unit!(@scale $($conversion),+)
                 }
